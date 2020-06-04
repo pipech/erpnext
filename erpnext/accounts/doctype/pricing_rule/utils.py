@@ -13,7 +13,10 @@ from six import string_types
 import frappe
 from erpnext.setup.doctype.item_group.item_group import get_child_item_groups
 from erpnext.stock.doctype.warehouse.warehouse import get_child_warehouses
-from erpnext.stock.get_item_details import get_conversion_factor
+from erpnext.stock.get_item_details import get_conversion_factor, get_default_income_account
+from erpnext.stock.doctype.item.item import get_item_defaults
+from erpnext.setup.doctype.item_group.item_group import get_item_group_defaults
+from erpnext.setup.doctype.brand.brand import get_brand_defaults
 from frappe import _, throw
 from frappe.utils import cint, flt, get_datetime, get_link_to_form, getdate, today
 
@@ -424,10 +427,14 @@ def apply_pricing_rule_on_transaction(doc):
 
 		for d in pricing_rules:
 			if d.price_or_product_discount == 'Price':
+				# if price discount, set discount info
+				# then calculate taxes and total
 				if d.apply_discount_on:
+					# set value [apply_discount_on]
 					doc.set('apply_discount_on', d.apply_discount_on)
 
 				for field in ['additional_discount_percentage', 'discount_amount']:
+					# map pricing rule field with doc field
 					pr_field = ('discount_percentage'
 						if field == 'additional_discount_percentage' else field)
 
@@ -437,10 +444,13 @@ def apply_pricing_rule_on_transaction(doc):
 						frappe.msgprint(_("User has not applied rule on the invoice {0}")
 							.format(doc.name))
 					else:
+						# set value > map pricing rule field with doc field
 						doc.set(field, d.get(pr_field))
 
 				doc.calculate_taxes_and_totals()
+
 			elif d.price_or_product_discount == 'Product':
+				# if product discount, add discount item
 				item_details = frappe._dict({'parenttype': doc.doctype})
 				get_product_discount_rule(d, item_details, doc=doc)
 				apply_pricing_rule_for_free_items(doc, item_details.free_item_data)
@@ -451,6 +461,7 @@ def get_applied_pricing_rules(item_row):
 		if item_row.get("pricing_rules") else [])
 
 def get_product_discount_rule(pricing_rule, item_details, args=None, doc=None):
+	company = args.get('company') or doc.company
 	free_item = pricing_rule.free_item
 	if pricing_rule.same_item:
 		free_item = item_details.item_code or args.item_code
@@ -480,6 +491,13 @@ def get_product_discount_rule(pricing_rule, item_details, args=None, doc=None):
 
 	if item_details.get("parenttype") == 'Sales Order':
 		item_details.free_item_data['delivery_date'] = doc.delivery_date if doc else today()
+
+	item_details.free_item_data['income_account'] = get_default_income_account(
+		args=args,
+		item=get_item_defaults(free_item, args.company),
+		item_group=get_item_group_defaults(free_item, args.company),
+		brand=get_brand_defaults(free_item, args.company),
+	)
 
 def apply_pricing_rule_for_free_items(doc, pricing_rule_args, set_missing_values=False):
 	if pricing_rule_args.get('item_code'):
