@@ -276,6 +276,10 @@ class AccountsController(TransactionBase):
 					if self.get("is_subcontracted"):
 						args["is_subcontracted"] = self.is_subcontracted
 
+					# removing pricing_rules, to prevent manually injecting pricing_rule in frontend
+					# pricing_rule should be in backend
+					args.pop('pricing_rules', None)
+
 					ret = get_item_details(args, self, for_validate=True, overwrite_warehouse=False)
 
 					for fieldname, value in ret.items():
