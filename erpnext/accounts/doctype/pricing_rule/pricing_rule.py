@@ -191,9 +191,12 @@ def apply_transaction_pricing_rule(doc):
 	if doc:
 		doc = frappe.get_doc(doc)
 
-	apply_pricing_rule_on_transaction(doc)
-
 	discount = {}
+
+	if doc.doctype == 'Material Request':
+		return discount
+
+	apply_pricing_rule_on_transaction(doc)
 
 	if (
 		doc.apply_discount_on and (
