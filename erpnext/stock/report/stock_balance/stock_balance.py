@@ -92,7 +92,8 @@ def get_columns(filters):
 
 	columns = [
 		{"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 100},
-		{"label": _("Item Name"), "fieldname": "item_name", "width": 150},
+		{"label": _("Item Name"), "fieldname": "item_name", "width": 175},
+		{"label": _("Swd Barcode"), "fieldname": "swd_barcode", "width": 150},
 		{"label": _("Item Group"), "fieldname": "item_group", "fieldtype": "Link", "options": "Item Group", "width": 100},
 		{"label": _("Warehouse"), "fieldname": "warehouse", "fieldtype": "Link", "options": "Warehouse", "width": 100},
 		{"label": _("Stock UOM"), "fieldname": "stock_uom", "fieldtype": "Link", "options": "UOM", "width": 90},
@@ -259,7 +260,7 @@ def get_item_details(items, sle, filters):
 
 	res = frappe.db.sql("""
 		select
-			item.name, item.item_name, item.description, item.item_group, item.brand, item.stock_uom %s
+			item.name, item.item_name, item.description, item.item_group, item.brand, item.stock_uom, item.swd_barcode %s
 		from
 			`tabItem` item
 			%s
