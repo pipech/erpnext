@@ -9,6 +9,7 @@
 					<a data-type="item"
 						data-name="{{ d.item_code }}">{{ d.item_code }}
 						{% if d.item_name != d.item_code %}({{ d.item_name }}){% endif %}
+						{% if d.swd_barcode %}<br>{{ d.swd_barcode }}{% endif %}
 					</a>
 				{% endif %}
 			</div>

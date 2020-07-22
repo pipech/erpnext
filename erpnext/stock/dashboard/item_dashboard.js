@@ -76,6 +76,7 @@ erpnext.stock.ItemDashboard = Class.extend({
 				item_code: this.item_code,
 				warehouse: this.warehouse,
 				item_group: this.item_group,
+				brand: this.brand,
 				start: this.start,
 				sort_by: this.sort_by,
 				sort_order: this.sort_order,
