@@ -6,7 +6,8 @@ from frappe.model.db_query import DatabaseQuery
 
 @frappe.whitelist()
 def get_data(
-    item_code=None, warehouse=None, item_group=None, brand=None,
+    item_code=None, warehouse=None, item_group=None,
+    brand=None, swd_barcode=None,
     start=0, sort_by='actual_qty', sort_order='desc'
 ):
     '''Return data to render the item dashboard'''
@@ -26,6 +27,19 @@ def get_data(
     current_user = frappe.session.user
 
     filters = []
+    if swd_barcode:
+        items = frappe.db.sql_list(
+            """
+            SELECT
+                i.name
+            FROM
+                `tabItem` i
+            WHERE
+                i.swd_barcode LIKE '%{swd_barcode}%'
+            """.format(swd_barcode=swd_barcode)
+        )
+        filters.append(['item_code', 'in', items])
+
     if item_code:
         filters.append(['item_code', 'like', item_code])
 

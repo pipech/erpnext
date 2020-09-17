@@ -74,6 +74,7 @@ erpnext.stock.ItemDashboard = Class.extend({
 			method: 'erpnext.stock.dashboard.item_dashboard.get_data',
 			args: {
 				item_code: this.item_code,
+				swd_barcode: this.swd_barcode,
 				warehouse: this.warehouse,
 				item_group: this.item_group,
 				brand: this.brand,

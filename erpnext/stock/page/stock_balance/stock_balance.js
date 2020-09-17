@@ -38,6 +38,16 @@ frappe.pages['stock-balance'].on_page_load = function(wrapper) {
 		}
 	});
 
+	page.swd_barcode_field = page.add_field({
+		fieldname: 'swd_barcode',
+		label: __('SWD Barcode'),
+		fieldtype:'Data',
+		change: function() {
+			page.item_dashboard.start = 0;
+			page.item_dashboard.refresh();
+		}
+	});
+
 	page.item_group_field = page.add_field({
 		fieldname: 'item_group',
 		label: __('Item Group'),
@@ -82,6 +92,7 @@ frappe.pages['stock-balance'].on_page_load = function(wrapper) {
 			this.warehouse = page.warehouse_field.get_value();
 			this.item_group = page.item_group_field.get_value();
 			this.brand = page.brand_field.get_value();
+			this.swd_barcode = page.swd_barcode_field.get_value();
 		}
 
 		page.item_dashboard.refresh();
