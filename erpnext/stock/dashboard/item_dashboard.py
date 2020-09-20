@@ -41,7 +41,19 @@ def get_data(
         filters.append(['item_code', 'in', items])
 
     if item_code:
-        filters.append(['item_code', 'like', item_code])
+        items = frappe.db.sql_list(
+            """
+            SELECT
+                i.name
+            FROM
+                `tabItem` i
+            WHERE
+                i.item_code LIKE '%{item_code}%'
+                OR
+                i.item_name LIKE '%{item_code}%'
+            """.format(item_code=item_code)
+        )
+        filters.append(['item_code', 'in', items])
 
     if item_group:
         lft, rgt = frappe.db.get_value("Item Group", item_group, ["lft", "rgt"])
