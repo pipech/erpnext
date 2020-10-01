@@ -100,7 +100,7 @@ def get_items(start, page_length, price_list, item_group, search_value="", pos_p
 			item_price = item_prices.get(item_code) or {}
 			item_stock_qty = bin_dict.get(item_code)
 
-			if display_items_in_stock and not item_stock_qty:
+			if display_items_in_stock and item.is_stock_item and not item_stock_qty:
 				pass
 			else:
 				row = {}
