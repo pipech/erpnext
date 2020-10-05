@@ -247,17 +247,12 @@ erpnext.pos.PointOfSale = class PointOfSale {
 			const search_value = batch_no || item_code;
 
 			// getting item
-			let item;
-			for (let i in this.frm.doc.items) {
-				i = this.frm.doc.items[i];
-				if (
+			const item = this.frm.doc.items.find(
+				(i) => (
 					(i[search_field] === search_value) &&
-					(i['is_free_item'] === is_free_item)
-				) {
-					item = i;
-					break;
-				}
-			}
+					(i['is_free_item'] == is_free_item)
+				)
+			);
 
 			frappe.flags.hide_serial_batch_dialog = false;
 
@@ -1040,7 +1035,7 @@ class POSCart {
 					} else {
 						const item_code = unescape(this.selected_item.attr('data-item-code'));
 						const batch_no = this.selected_item.attr('data-batch-no');
-						const is_free_item = (this.selected_item.attar('data-is-free-item') == '1');
+						const is_free_item = (this.selected_item.attr('data-is-free-item') == '1');
 						const field = this.selected_item.active_field;
 						const value = this.numpad.get_value();
 
