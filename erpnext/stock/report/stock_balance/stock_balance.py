@@ -92,9 +92,10 @@ def get_columns(filters):
 
 	columns = [
 		{"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 100},
-		{"label": _("Item Name"), "fieldname": "item_name", "width": 175},
-		{"label": _("Swd Barcode"), "fieldname": "swd_barcode", "width": 150},
+		{"label": _("Item Name"), "fieldname": "item_name", "width": 150},
 		{"label": _("Item Group"), "fieldname": "item_group", "fieldtype": "Link", "options": "Item Group", "width": 100},
+		{"label": _("SWD Barcode"), "fieldname": "swd_barcode", "width": 100},
+		{"label": _("Brand"), "fieldname": "brand", "fieldtype": "Link", "options": "Brand", "width": 100},
 		{"label": _("Warehouse"), "fieldname": "warehouse", "fieldtype": "Link", "options": "Warehouse", "width": 100},
 		{"label": _("Stock UOM"), "fieldname": "stock_uom", "fieldtype": "Link", "options": "UOM", "width": 90},
 		{"label": _("Balance Qty"), "fieldname": "bal_qty", "fieldtype": "Float", "width": 100, "convertible": "qty"},
@@ -115,9 +116,6 @@ def get_columns(filters):
 		columns += [{'label': _('Average Age'), 'fieldname': 'average_age', 'width': 100},
 		{'label': _('Earliest Age'), 'fieldname': 'earliest_age', 'width': 100},
 		{'label': _('Latest Age'), 'fieldname': 'latest_age', 'width': 100}]
-
-	if filters.get('show_variant_attributes'):
-		columns += [{'label': att_name, 'fieldname': att_name, 'width': 100} for att_name in get_variants_attributes()]
 
 	return columns
 
@@ -238,6 +236,9 @@ def get_items(filters):
 		if filters.get("item_group"):
 			conditions.append(get_item_group_condition(filters.get("item_group")))
 
+		if filters.get('brand'):
+			conditions.append('item.brand=%(brand)s')
+
 	items = []
 	if conditions:
 		items = frappe.db.sql_list("""select name from `tabItem` item where {}"""
@@ -260,7 +261,10 @@ def get_item_details(items, sle, filters):
 
 	res = frappe.db.sql("""
 		select
-			item.name, item.item_name, item.description, item.item_group, item.brand, item.stock_uom, item.swd_barcode %s
+			item.name, item.item_name, item.description,
+			item.item_group, item.brand, item.stock_uom,
+			item.brand, item.swd_barcode
+			%s
 		from
 			`tabItem` item
 			%s
@@ -270,10 +274,6 @@ def get_item_details(items, sle, filters):
 
 	for item in res:
 		item_details.setdefault(item.name, item)
-
-	if filters.get('show_variant_attributes', 0) == 1:
-		variant_values = get_variant_values_for(list(item_details))
-		item_details = {k: v.update(variant_values.get(k, {})) for k, v in iteritems(item_details)}
 
 	return item_details
 
