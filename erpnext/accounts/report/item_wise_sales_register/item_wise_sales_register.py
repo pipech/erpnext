@@ -8,6 +8,8 @@ from frappe.utils import flt, cstr
 from frappe.model.meta import get_field_precision
 from frappe.utils.xlsxutils import handle_html
 from erpnext.accounts.report.sales_register.sales_register import get_mode_of_payments
+# from erpnext.stock.get_item_details import get_price_list_rate_for
+
 
 def execute(filters=None):
 	return _execute(filters)
@@ -34,6 +36,8 @@ def _execute(filters=None, additional_table_columns=None, additional_query_colum
 	if filters.get('group_by'):
 		grand_total = get_grand_total(filters, 'Sales Invoice')
 
+	item_price_dict = {}
+
 	for d in item_list:
 		delivery_note = None
 		if d.delivery_note:
@@ -55,6 +59,30 @@ def _execute(filters=None, additional_table_columns=None, additional_query_colum
 			'customer_name': d.customer_name,
 			'customer_group': d.customer_group,
 		}
+
+		# item_price = item_price_dict.get(d.item_code, None)
+
+		# if not item_price:
+		# 	item_price = get_price_list_rate_for(
+		# 		args={
+		# 			'price_list': 'Standard Selling',
+		# 			'uom': 'Nos',
+		# 			'qty': 1,
+		# 		},
+		# 		item_code=d.item_code,
+		# 	)
+		# 	item_price_dict[d.item_code] = item_price
+
+		# custom column
+		row.update({
+			'warehouse': d.warehouse,
+			'address_display': d.address_display,
+			'shipping_address': d.shipping_address,
+			'variant_of': d.variant_of,
+			'swd_barcode': d.swd_barcode,
+			'price_list': d.price_list_rate,
+			'pricing_rules': d.pricing_rules,
+		})
 
 		if additional_query_columns:
 			for col in additional_query_columns:
@@ -157,6 +185,18 @@ def get_columns(additional_table_columns, filters):
 
 	columns.extend([
 		{
+			'label': _('Variant Of'),
+			'fieldname': 'variant_of',
+			'fieldtype': 'Data',
+			'width': 100,
+		},
+		{
+			'label': _('SWD Barcode'),
+			'fieldname': 'swd_barcode',
+			'fieldtype': 'Data',
+			'width': 100,
+		},
+		{
 			'label': _('Description'),
 			'fieldname': 'description',
 			'fieldtype': 'Data',
@@ -168,6 +208,12 @@ def get_columns(additional_table_columns, filters):
 			'fieldtype': 'Link',
 			'options': 'Sales Invoice',
 			'width': 120
+		},
+		{
+			'label': _('Warehouse'),
+			'fieldname': 'warehouse',
+			'fieldtype': 'Data',
+			'width': 100
 		},
 		{
 			'label': _('Posting Date'),
@@ -293,6 +339,19 @@ def get_columns(additional_table_columns, filters):
 			'width': 100
 		},
 		{
+			'label': _('Pricing Rule'),
+			'fieldname': 'pricing_rules',
+			'fieldtype': 'Data',
+			'width': 100
+		},
+		{
+			'label': _('Price List Rate'),
+			'fieldname': 'price_list',
+			'fieldtype': 'Float',
+			'options': 'currency',
+			'width': 100
+		},
+		{
 			'label': _('Rate'),
 			'fieldname': 'rate',
 			'fieldtype': 'Float',
@@ -322,6 +381,21 @@ def get_columns(additional_table_columns, filters):
 			'fieldtype': 'Float',
 			'width': 80
 		})
+
+	columns.extend([
+		{
+			'label': _('Shipping Address'),
+			'fieldname': 'shipping_address',
+			'fieldtype': 'Small Text',
+			'width': 100
+		},
+		{
+			'label': _('Billing Address'),
+			'fieldname': 'billing_address',
+			'fieldtype': 'Small Text',
+			'width': 100
+		}
+	])
 
 	return columns
 
@@ -377,7 +451,7 @@ def get_items(filters, additional_query_columns):
 		additional_query_columns = ''
 
 	return frappe.db.sql("""
-		select
+		SELECT
 			`tabSales Invoice Item`.name, `tabSales Invoice Item`.parent,
 			`tabSales Invoice`.posting_date, `tabSales Invoice`.debit_to,
 			`tabSales Invoice`.project, `tabSales Invoice`.customer, `tabSales Invoice`.remarks,
@@ -389,10 +463,22 @@ def get_items(filters, additional_query_columns):
 			`tabSales Invoice Item`.stock_uom, `tabSales Invoice Item`.base_net_rate,
 			`tabSales Invoice Item`.base_net_amount, `tabSales Invoice`.customer_name,
 			`tabSales Invoice`.customer_group, `tabSales Invoice Item`.so_detail,
+			`tabSales Invoice Item`.warehouse,
+			`tabSales Invoice Item`.price_list_rate,
+			`tabSales Invoice Item`.pricing_rules,
+			`tabSales Invoice`.address_display,
+			`tabSales Invoice`.shipping_address,
+			`tabItem`.swd_barcode,
+			`tabItem`.variant_of,
 			`tabSales Invoice`.update_stock, `tabSales Invoice Item`.uom, `tabSales Invoice Item`.qty {0}
-		from `tabSales Invoice`, `tabSales Invoice Item`
-		where `tabSales Invoice`.name = `tabSales Invoice Item`.parent
-			and `tabSales Invoice`.docstatus = 1 {1}
+		FROM
+			`tabSales Invoice`,
+			`tabSales Invoice Item`,
+			`tabItem`
+		WHERE
+			`tabSales Invoice`.name = `tabSales Invoice Item`.parent
+		AND `tabSales Invoice Item`.item_code = `tabItem`.name
+		AND `tabSales Invoice`.docstatus = 1 {1}
 		""".format(additional_query_columns or '', conditions), filters, as_dict=1) #nosec
 
 def get_delivery_notes_against_sales_order(item_list):
