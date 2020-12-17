@@ -7,7 +7,7 @@ from frappe import _
 from frappe.utils import flt, cint, getdate, now, date_diff
 from erpnext.stock.utils import add_additional_uom_columns
 from erpnext.stock.report.stock_ledger.stock_ledger import get_item_group_condition
-
+from erpnext.stock.get_item_details import get_price_list_rate_for
 from erpnext.stock.report.stock_ageing.stock_ageing import get_fifo_queue, get_average_age
 
 from six import iteritems
@@ -43,6 +43,7 @@ def execute(filters=None):
 	_func = lambda x: x[1]
 
 	for (company, item, warehouse) in sorted(iwb_map):
+		item_price_dict = {}
 		if item_map.get(item):
 			qty_dict = iwb_map[(company, item, warehouse)]
 			item_reorder_level = 0
@@ -60,6 +61,19 @@ def execute(filters=None):
 			}
 			report_data.update(item_map[item])
 			report_data.update(qty_dict)
+
+			item_price = item_price_dict.get(item, None)
+			if not item_price:
+				item_price = get_price_list_rate_for(
+					args={
+						'price_list': 'Standard Selling',
+						'uom': 'Nos',
+						'qty': 1,
+					},
+					item_code=item,
+				)
+				item_price_dict[item] = item_price
+			report_data['price_list_rate'] = item_price_dict.get(item, None)
 
 			if include_uom:
 				conversion_factors.setdefault(item, item_map[item].conversion_factor)
@@ -95,7 +109,21 @@ def get_columns(filters):
 		{"label": _("Item Name"), "fieldname": "item_name", "width": 150},
 		{"label": _("Item Group"), "fieldname": "item_group", "fieldtype": "Link", "options": "Item Group", "width": 100},
 		{"label": _("SWD Barcode"), "fieldname": "swd_barcode", "width": 100},
+		{"label": _("Col Year"), "fieldname": "collection_year", "width": 50},
+		{"label": _("Col Season"), "fieldname": "collection_season", "width": 50},
 		{"label": _("Brand"), "fieldname": "brand", "fieldtype": "Link", "options": "Brand", "width": 100},
+		{
+			'label': _('Item Template Name'),
+			'fieldname': 'template_name',
+			'fieldtype': 'Data',
+			'width': 100,
+		},
+		{
+			'label': _('Price List Rate'),
+			'fieldname': 'price_list_rate',
+			'fieldtype': 'Currency',
+			'width': 100,
+		},
 		{"label": _("Warehouse"), "fieldname": "warehouse", "fieldtype": "Link", "options": "Warehouse", "width": 100},
 		{"label": _("Stock UOM"), "fieldname": "stock_uom", "fieldtype": "Link", "options": "UOM", "width": 90},
 		{"label": _("Balance Qty"), "fieldname": "bal_qty", "fieldtype": "Float", "width": 100, "convertible": "qty"},
@@ -263,11 +291,15 @@ def get_item_details(items, sle, filters):
 		select
 			item.name, item.item_name, item.description,
 			item.item_group, item.brand, item.stock_uom,
-			item.brand, item.swd_barcode
+			item.brand, item.swd_barcode,
+			`tabItem Template`.item_name AS 'template_name',
+			item.collection_season, item.collection_year
 			%s
 		from
 			`tabItem` item
 			%s
+		LEFT JOIN `tabItem` AS `tabItem Template`
+			ON `tabItem Template`.name = item.variant_of
 		where
 			item.name in (%s)
 	""" % (cf_field, cf_join, ','.join(['%s'] *len(items))), items, as_dict=1)
