@@ -73,15 +73,30 @@ def _execute(filters=None, additional_table_columns=None, additional_query_colum
 		# 	)
 		# 	item_price_dict[d.item_code] = item_price
 
-		# custom column
+		net_w_tax = round(d.base_net_rate * 1.07, 2)
+		discount_percentage = 0
+		if d.price_list_rate:
+			discount_amount = d.price_list_rate - net_w_tax
+			discount_percentage = abs(1 - (net_w_tax / d.price_list_rate)) * 100
+
+		# swdspc custom column
 		row.update({
+			'pos_full_tax_invoice_no': d.pos_full_tax_invoice_no,
+			'brand': d.brand,
 			'warehouse': d.warehouse,
 			'address_display': d.address_display,
+			'billing_province': d.billing_province,
 			'shipping_address': d.shipping_address,
+			'shipping_province': d.shipping_province,
+			'mobile': d.mobile,
 			'variant_of': d.variant_of,
+			'template_name': d.template_name,
 			'swd_barcode': d.swd_barcode,
 			'price_list': d.price_list_rate,
 			'pricing_rules': d.pricing_rules,
+			'net_w_tax': net_w_tax,
+			'discount_percentage': discount_percentage,
+			'discount_amount': discount_amount,
 		})
 
 		if additional_query_columns:
@@ -185,8 +200,20 @@ def get_columns(additional_table_columns, filters):
 
 	columns.extend([
 		{
-			'label': _('Variant Of'),
+			'label': _('Item Template Code'),
 			'fieldname': 'variant_of',
+			'fieldtype': 'Data',
+			'width': 100,
+		},
+		{
+			'label': _('Item Template Name'),
+			'fieldname': 'template_name',
+			'fieldtype': 'Data',
+			'width': 100,
+		},
+		{
+			'label': _('Brand'),
+			'fieldname': 'brand',
 			'fieldtype': 'Data',
 			'width': 100,
 		},
@@ -207,6 +234,12 @@ def get_columns(additional_table_columns, filters):
 			'fieldname': 'invoice',
 			'fieldtype': 'Link',
 			'options': 'Sales Invoice',
+			'width': 120
+		},
+		{
+			'label': _('Full Invoice'),
+			'fieldname': 'pos_full_tax_invoice_no',
+			'fieldtype': 'Data',
 			'width': 120
 		},
 		{
@@ -352,6 +385,26 @@ def get_columns(additional_table_columns, filters):
 			'width': 100
 		},
 		{
+			'label': _('Net With Tax'),
+			'fieldname': 'net_w_tax',
+			'fieldtype': 'Float',
+			'options': 'currency',
+			'width': 100
+		},
+		{
+			'label': _('Discount Percentage'),
+			'fieldname': 'discount_percentage',
+			'fieldtype': 'Percent',
+			'width': 100
+		},
+		{
+			'label': _('Discount Amount'),
+			'fieldname': 'discount_amount',
+			'fieldtype': 'Float',
+			'options': 'currency',
+			'width': 100
+		},
+		{
 			'label': _('Rate'),
 			'fieldname': 'rate',
 			'fieldtype': 'Float',
@@ -365,13 +418,6 @@ def get_columns(additional_table_columns, filters):
 			'options': 'currency',
 			'width': 100
 		},
-		{
-			'fieldname': 'currency',
-			'label': _('Currency'),
-			'fieldtype': 'Currency',
-			'width': 80,
-			'hidden': 1
-		}
 	]
 
 	if filters.get('group_by'):
@@ -384,17 +430,35 @@ def get_columns(additional_table_columns, filters):
 
 	columns.extend([
 		{
-			'label': _('Shipping Address'),
-			'fieldname': 'shipping_address',
-			'fieldtype': 'Small Text',
-			'width': 100
+			'label': _('Mobile'),
+			'fieldname': 'mobile',
+			'fieldtype': 'Data',
+			'width': 80
 		},
 		{
-			'label': _('Billing Address'),
-			'fieldname': 'billing_address',
+			'label': _('SHIPPING Address'),
+			'fieldname': 'shipping_address',
 			'fieldtype': 'Small Text',
-			'width': 100
-		}
+			'width': 150
+		},
+		{
+			'label': _('SHIPPING Province'),
+			'fieldname': 'shipping_province',
+			'fieldtype': 'Data',
+			'width': 80
+		},
+		{
+			'label': _('BILLING Address'),
+			'fieldname': 'address_display',
+			'fieldtype': 'Small Text',
+			'width': 150
+		},
+		{
+			'label': _('BILLING Province'),
+			'fieldname': 'billing_province',
+			'fieldtype': 'Data',
+			'width': 80
+		},
 	])
 
 	return columns
@@ -450,7 +514,7 @@ def get_items(filters, additional_query_columns):
 	else:
 		additional_query_columns = ''
 
-	return frappe.db.sql("""
+	sql = """
 		SELECT
 			`tabSales Invoice Item`.name, `tabSales Invoice Item`.parent,
 			`tabSales Invoice`.posting_date, `tabSales Invoice`.debit_to,
@@ -467,19 +531,37 @@ def get_items(filters, additional_query_columns):
 			`tabSales Invoice Item`.price_list_rate,
 			`tabSales Invoice Item`.pricing_rules,
 			`tabSales Invoice`.address_display,
+			`tabSales Invoice`.pos_full_tax_invoice_no,
 			`tabSales Invoice`.shipping_address,
+			`tabSales Invoice`.customer_address,
+			`tabShipping Address`.state AS 'shipping_province',
+			`tabBilling Address`.state AS 'billing_province',
+			`tabCustomer`.mobile,
 			`tabItem`.swd_barcode,
 			`tabItem`.variant_of,
+			`tabItem`.brand,
+			`tabItem Template`.item_name AS 'template_name',
 			`tabSales Invoice`.update_stock, `tabSales Invoice Item`.uom, `tabSales Invoice Item`.qty {0}
 		FROM
-			`tabSales Invoice`,
-			`tabSales Invoice Item`,
-			`tabItem`
+			`tabSales Invoice`
+		LEFT JOIN `tabSales Invoice Item`
+			ON `tabSales Invoice Item`.parent = `tabSales Invoice`.name
+		LEFT JOIN `tabAddress` AS `tabShipping Address`
+			ON `tabShipping Address`.name = `tabSales Invoice`.customer_address
+		LEFT JOIN `tabAddress` AS `tabBilling Address`
+			ON `tabBilling Address`.name = `tabSales Invoice`.customer_address
+		LEFT JOIN `tabCustomer`
+			ON `tabCustomer`.name = `tabSales Invoice`.customer
+		LEFT JOIN `tabItem`
+			ON `tabItem`.name = `tabSales Invoice Item`.item_code
+		LEFT JOIN `tabItem` AS `tabItem Template`
+			ON `tabItem Template`.name = `tabItem`.variant_of
 		WHERE
-			`tabSales Invoice`.name = `tabSales Invoice Item`.parent
-		AND `tabSales Invoice Item`.item_code = `tabItem`.name
-		AND `tabSales Invoice`.docstatus = 1 {1}
-		""".format(additional_query_columns or '', conditions), filters, as_dict=1) #nosec
+			`tabSales Invoice`.docstatus = 1
+			{1}
+		""".format(additional_query_columns or '', conditions)
+
+	return frappe.db.sql(sql, filters, as_dict=1)
 
 def get_delivery_notes_against_sales_order(item_list):
 	so_dn_map = frappe._dict()
