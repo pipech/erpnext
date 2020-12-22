@@ -163,6 +163,52 @@ def _execute(filters=None, additional_table_columns=None, additional_query_colum
 		data.append(total_row_map.get('total_row'))
 		skip_total_row = 1
 
+	columns.extend([
+		{
+			'label': _('Customer'),
+			'fieldname': 'customer',
+			'fieldtype': 'Link',
+			'options': 'Customer',
+			'width': 120
+		},
+		{
+			'label': _('Customer Name'),
+			'fieldname': 'customer_name',
+			'fieldtype': 'Data',
+			'width': 120
+		},
+		{
+			'label': _('Mobile'),
+			'fieldname': 'mobile',
+			'fieldtype': 'Data',
+			'width': 80
+		},
+		{
+			'label': _('SHIPPING Address'),
+			'fieldname': 'shipping_address',
+			'fieldtype': 'Small Text',
+			'width': 150
+		},
+		{
+			'label': _('SHIPPING Province'),
+			'fieldname': 'shipping_province',
+			'fieldtype': 'Data',
+			'width': 80
+		},
+		{
+			'label': _('BILLING Address'),
+			'fieldname': 'address_display',
+			'fieldtype': 'Small Text',
+			'width': 150
+		},
+		{
+			'label': _('BILLING Province'),
+			'fieldname': 'billing_province',
+			'fieldtype': 'Data',
+			'width': 80
+		},
+	])
+
 	return columns, data, None, None, None, skip_total_row
 
 def get_columns(additional_table_columns, filters):
@@ -263,23 +309,6 @@ def get_columns(additional_table_columns, filters):
 				'fieldname': 'customer_group',
 				'fieldtype': 'Link',
 				'options': 'Customer Group',
-				'width': 120
-			}
-		])
-
-	if filters.get('group_by') not in ('Customer', 'Customer Group'):
-		columns.extend([
-			{
-				'label': _('Customer'),
-				'fieldname': 'customer',
-				'fieldtype': 'Link',
-				'options': 'Customer',
-				'width': 120
-			},
-			{
-				'label': _('Customer Name'),
-				'fieldname': 'customer_name',
-				'fieldtype': 'Data',
 				'width': 120
 			}
 		])
@@ -427,39 +456,6 @@ def get_columns(additional_table_columns, filters):
 			'fieldtype': 'Float',
 			'width': 80
 		})
-
-	columns.extend([
-		{
-			'label': _('Mobile'),
-			'fieldname': 'mobile',
-			'fieldtype': 'Data',
-			'width': 80
-		},
-		{
-			'label': _('SHIPPING Address'),
-			'fieldname': 'shipping_address',
-			'fieldtype': 'Small Text',
-			'width': 150
-		},
-		{
-			'label': _('SHIPPING Province'),
-			'fieldname': 'shipping_province',
-			'fieldtype': 'Data',
-			'width': 80
-		},
-		{
-			'label': _('BILLING Address'),
-			'fieldname': 'address_display',
-			'fieldtype': 'Small Text',
-			'width': 150
-		},
-		{
-			'label': _('BILLING Province'),
-			'fieldname': 'billing_province',
-			'fieldtype': 'Data',
-			'width': 80
-		},
-	])
 
 	return columns
 
