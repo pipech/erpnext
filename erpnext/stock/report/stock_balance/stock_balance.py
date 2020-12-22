@@ -288,20 +288,22 @@ def get_item_details(items, sle, filters):
 			% frappe.db.escape(filters.get("include_uom"))
 
 	res = frappe.db.sql("""
-		select
+		SELECT
 			item.name, item.item_name, item.description,
 			item.item_group, item.brand, item.stock_uom,
 			item.brand, item.swd_barcode,
 			`tabItem Template`.item_name AS 'template_name',
 			item.collection_season, item.collection_year
 			%s
-		from
+		FROM
 			`tabItem` item
 			%s
 		LEFT JOIN `tabItem` AS `tabItem Template`
 			ON `tabItem Template`.name = item.variant_of
-		where
+		WHERE
 			item.name in (%s)
+			AND
+			item.disabled = 0
 	""" % (cf_field, cf_join, ','.join(['%s'] *len(items))), items, as_dict=1)
 
 	for item in res:
