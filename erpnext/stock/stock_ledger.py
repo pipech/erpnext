@@ -484,6 +484,9 @@ def get_stock_ledger_entries(previous_sle, operator=None,
 
 def get_valuation_rate(item_code, warehouse, voucher_type, voucher_no,
 	allow_zero_rate=False, currency=None, company=None, raise_error_if_no_rate=True):
+	# force allow zero rate
+	allow_zero_rate = True
+
 	# Get valuation rate from last sle for the same item and warehouse
 	if not company:
 		company = erpnext.get_default_company()
@@ -538,5 +541,8 @@ def get_valuation_rate(item_code, warehouse, voucher_type, voucher_no,
 		msg = message + solutions + sub_solutions + "</li>"
 
 		frappe.throw(msg=msg, title=_("Valuation Rate Missing"))
+
+	if not valuation_rate:
+		valuation_rate = 0
 
 	return valuation_rate
