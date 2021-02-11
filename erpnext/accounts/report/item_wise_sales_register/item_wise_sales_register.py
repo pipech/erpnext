@@ -74,6 +74,7 @@ def _execute(filters=None, additional_table_columns=None, additional_query_colum
 		# 	item_price_dict[d.item_code] = item_price
 
 		net_w_tax = round(d.base_net_rate * 1.07, 2)
+		discount_amount = 0
 		discount_percentage = 0
 		if d.price_list_rate:
 			discount_amount = d.price_list_rate - net_w_tax
