@@ -9,6 +9,7 @@ from frappe.model.meta import get_field_precision
 from frappe.utils.xlsxutils import handle_html
 from erpnext.accounts.report.sales_register.sales_register import get_mode_of_payments
 # from erpnext.stock.get_item_details import get_price_list_rate_for
+from swdspc.swd_selling.sales_invoice_perm import is_operation_user, get_user_pos
 
 
 def execute(filters=None):
@@ -511,6 +512,16 @@ def get_items(filters, additional_query_columns):
 	else:
 		additional_query_columns = ''
 
+	operate_user_condition = ''
+	if is_operation_user(frappe.session.user):
+		user_pos = get_user_pos(frappe.session.user)
+		user_pos_text = ','.join(map("'{0}'".format, user_pos))
+		operate_user_condition = """
+			AND `tabSales Invoice`.`pos_profile` IN ({user_pos})
+		""".format(
+			user_pos=user_pos_text,
+		)
+
 	sql = """
 		SELECT
 			`tabSales Invoice Item`.name, `tabSales Invoice Item`.parent,
@@ -538,7 +549,7 @@ def get_items(filters, additional_query_columns):
 			`tabItem`.variant_of,
 			`tabItem`.brand,
 			`tabItem Template`.item_name AS 'template_name',
-			`tabSales Invoice`.update_stock, `tabSales Invoice Item`.uom, `tabSales Invoice Item`.qty {0}
+			`tabSales Invoice`.update_stock, `tabSales Invoice Item`.uom, `tabSales Invoice Item`.qty {addit_query}
 		FROM
 			`tabSales Invoice`
 		LEFT JOIN `tabSales Invoice Item`
@@ -555,8 +566,13 @@ def get_items(filters, additional_query_columns):
 			ON `tabItem Template`.name = `tabItem`.variant_of
 		WHERE
 			`tabSales Invoice`.docstatus = 1
-			{1}
-		""".format(additional_query_columns or '', conditions)
+			{operate_user_condition}
+			{conditions}
+		""".format(
+		addit_query=additional_query_columns or '',
+		conditions=conditions,
+		operate_user_condition=operate_user_condition,
+	)
 
 	return frappe.db.sql(sql, filters, as_dict=1)
 
