@@ -419,7 +419,10 @@ class StockEntry(StockController):
 		self.set_basic_rate(force, update_finished_item_rate, raise_error_if_no_rate)
 		self.distribute_additional_costs()
 		self.update_valuation_rate()
-		self.set_total_incoming_outgoing_value()
+		# really dirty dirty fix for "Not allowed to change Total Incoming Value after submission"
+		# error after sumit sales order
+		# this total_incoming_value isn't use for anything
+		# self.set_total_incoming_outgoing_value()
 		self.set_total_amount()
 
 	def set_basic_rate(self, force=False, update_finished_item_rate=True, raise_error_if_no_rate=True):
