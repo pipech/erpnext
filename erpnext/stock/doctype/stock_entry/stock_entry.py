@@ -423,7 +423,7 @@ class StockEntry(StockController):
 		# error after sumit sales order
 		# this total_incoming_value isn't use for anything
 		# self.set_total_incoming_outgoing_value()
-		self.set_total_amount()
+		# self.set_total_amount()
 
 	def set_basic_rate(self, force=False, update_finished_item_rate=True, raise_error_if_no_rate=True):
 		"""get stock and incoming rate on posting date"""
