@@ -76,7 +76,10 @@ class StockController(AccountsController):
 					if warehouse_account.get(sle.warehouse):
 						# from warehouse account
 
-						self.check_expense_account(item_row)
+						# dirty dirty hack,
+						# to fix "Expense or Difference account is mandatory for Item {0} as it impacts overall stock value" error
+						# since adj doesn't use accounting, and doesn't have incoming stock value
+						# self.check_expense_account(item_row)
 
 						# If the item does not have the allow zero valuation rate flag set
 						# and ( valuation rate not mentioned in an incoming entry
