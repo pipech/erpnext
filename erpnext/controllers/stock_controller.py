@@ -76,10 +76,7 @@ class StockController(AccountsController):
 					if warehouse_account.get(sle.warehouse):
 						# from warehouse account
 
-						# dirty dirty hack,
-						# to fix "Expense or Difference account is mandatory for Item {0} as it impacts overall stock value" error
-						# since adj doesn't use accounting, and doesn't have incoming stock value
-						# self.check_expense_account(item_row)
+						self.check_expense_account(item_row)
 
 						# If the item does not have the allow zero valuation rate flag set
 						# and ( valuation rate not mentioned in an incoming entry
@@ -226,6 +223,16 @@ class StockController(AccountsController):
 						reference_name=self.name)).insert().name
 
 	def check_expense_account(self, item):
+		# dirty hack,
+		# to fix "Expense or Difference account is mandatory for Item {0} as it impacts overall stock value" error
+		# since adj doesn't use accounting, and doesn't have incoming stock value
+		if not item.expense_account:
+			item.expense_account = frappe.get_value(
+				doctype='Company',
+				filters='SAWASDEE SOPHON PICHIT',
+				fieldname='stock_adjustment_account',
+			)
+
 		if not item.get("expense_account"):
 			frappe.throw(_("Expense or Difference account is mandatory for Item {0} as it impacts overall stock value").format(item.item_code))
 
