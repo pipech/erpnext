@@ -232,6 +232,12 @@ class StockController(AccountsController):
 				filters='SAWASDEE SOPHON PICHIT',
 				fieldname='stock_adjustment_account',
 			)
+		if not item.get('cost_center', None):
+			item.cost_center = frappe.get_value(
+				doctype='Company',
+				filters='SAWASDEE SOPHON PICHIT',
+				fieldname='cost_center',
+			)
 
 		if not item.get("expense_account"):
 			frappe.throw(_("Expense or Difference account is mandatory for Item {0} as it impacts overall stock value").format(item.item_code))
