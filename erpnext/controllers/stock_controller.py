@@ -226,7 +226,7 @@ class StockController(AccountsController):
 		# dirty hack,
 		# to fix "Expense or Difference account is mandatory for Item {0} as it impacts overall stock value" error
 		# since adj doesn't use accounting, and doesn't have incoming stock value
-		if not item.expense_account:
+		if not item.get('expense_account', None):
 			item.expense_account = frappe.get_value(
 				doctype='Company',
 				filters='SAWASDEE SOPHON PICHIT',
