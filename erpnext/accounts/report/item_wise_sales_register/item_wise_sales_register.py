@@ -86,6 +86,7 @@ def _execute(filters=None, additional_table_columns=None, additional_query_colum
 			'pos_full_tax_invoice_no': d.pos_full_tax_invoice_no,
 			'brand': d.brand,
 			'warehouse': d.warehouse,
+			'pos_profile': d.pos_profile,
 			'address_display': d.address_display,
 			'billing_province': d.billing_province,
 			'shipping_address': d.shipping_address,
@@ -297,6 +298,12 @@ def get_columns(additional_table_columns, filters):
 			'width': 100
 		},
 		{
+			'label': _('Pos Profile'),
+			'fieldname': 'pos_profile',
+			'fieldtype': 'Data',
+			'width': 100
+		},
+		{
 			'label': _('Posting Date'),
 			'fieldname': 'posting_date',
 			'fieldtype': 'Date',
@@ -480,6 +487,8 @@ def get_conditions(filters):
 	if filters.get("warehouse"):
 		conditions +=  """and ifnull(`tabSales Invoice Item`.warehouse, '') = %(warehouse)s"""
 
+	if filters.get('pos_profile'):
+		conditions += """and ifnull(`tabSales Invoice`.pos_profile, '') = %(pos_profile)s"""
 
 	if filters.get("brand"):
 		conditions +=  """and ifnull(`tabSales Invoice Item`.brand, '') = %(brand)s"""
@@ -535,6 +544,7 @@ def get_items(filters, additional_query_columns):
 			`tabSales Invoice Item`.stock_uom, `tabSales Invoice Item`.base_net_rate,
 			`tabSales Invoice Item`.base_net_amount, `tabSales Invoice`.customer_name,
 			`tabSales Invoice`.customer_group, `tabSales Invoice Item`.so_detail,
+			`tabSales Invoice`.pos_profile,
 			`tabSales Invoice Item`.warehouse,
 			`tabSales Invoice Item`.price_list_rate,
 			`tabSales Invoice Item`.pricing_rules,

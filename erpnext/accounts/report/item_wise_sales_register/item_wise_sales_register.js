@@ -36,6 +36,12 @@ frappe.query_reports["Item-wise Sales Register"] = {
 			"options": "Warehouse"
 		},
 		{
+			"fieldname": "pos_profile",
+			"label": __("Pos Profile"),
+			"fieldtype": "Link",
+			"options": "POS Profile"
+		},
+		{
 			"fieldname": "brand",
 			"label": __("Brand"),
 			"fieldtype": "Link",
